@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.team1918.robot;
+package frc.robot;
 
 import java.io.File;
 
@@ -14,9 +14,9 @@ import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandStadiaController;
-import frc.team1918.robot.constants.*;
-import frc.team1918.robot.subsystems.SwerveSubsystem;
-import frc.team1918.robot.utils.InputAxis;
+import frc.robot.constants.*;
+import frc.robot.subsystems.SwerveSubsystem;
+import frc.robot.utils.InputAxis;
 
 public class RobotContainer {
   private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));

@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.team1918.robot.subsystems;
+package frc.robot.subsystems;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -22,8 +22,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Config;
-import frc.team1918.robot.constants.AutonConstants;
-import frc.team1918.robot.constants.SwerveConstants;
+import frc.robot.constants.AutonConstants;
+import frc.robot.constants.SwerveConstants;
 
 import java.io.File;
 import java.util.function.DoubleSupplier;

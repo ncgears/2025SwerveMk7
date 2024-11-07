@@ -1,5 +1,5 @@
 
-package frc.team1918.robot.constants;
+package frc.robot.constants;
 
 //Sometimes it is useful to comment out the following to see what variables or what controller buttons are not assigned yet
 @SuppressWarnings("unused") //We silence the "unused variables" warnings in VSCode
