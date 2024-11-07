@@ -4,74 +4,88 @@
 
 package frc.robot;
 
-import java.io.File;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import static edu.wpi.first.units.Units.*;
+
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandStadiaController;
 import frc.robot.constants.*;
-import frc.robot.subsystems.SwerveSubsystem;
 import frc.robot.utils.InputAxis;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 
 public class RobotContainer {
-  private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(),"swerve"));
-  private final CommandStadiaController dj = new CommandStadiaController(OIConstants.JoyDriverID);
+    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxAngularRate = RotationsPerSecond.of(SwerveConstants.kMaxAngularRate).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
 
-  public RobotContainer() {
-    final InputAxis m_fieldX = new InputAxis("Forward", dj::getLeftY)
-      .withDeadband(OIConstants.kMinDeadband)
-      .withInvert(true)
-      .withSquaring(true);
-    final InputAxis m_fieldY = new InputAxis("Strafe", dj::getLeftX)
-      .withDeadband(OIConstants.kMinDeadband)
-      .withInvert(true)
-      .withSquaring(true);
-    final InputAxis m_rotate = new InputAxis("Rotate", dj::getRightX)
-      .withDeadband(OIConstants.kMinDeadband)
-      .withInvert(true);
-    final InputAxis m_angleX = new InputAxis("Angle X", dj::getRightX);
-    final InputAxis m_angleY = new InputAxis("Angle Y", dj::getRightY);
+    private final Telemetry logger = new Telemetry(MaxSpeed);
+    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    /* Setting up bindings for necessary control of the swerve drive platform */
+    private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+        .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    configureBindings();
+    private final CommandStadiaController dj = new CommandStadiaController(OIConstants.JoyDriverID);
 
-    Command driveFieldOrientedDirectAngle = drivebase.driveCommand(m_fieldX, m_fieldY, m_angleX, m_angleY);
-    Command driveFieldOrientedAngularVelocity = drivebase.driveCommand(m_fieldX, m_fieldY, m_rotate);
-    Command driveFieldOrientedDirectAngleSim = drivebase.simDriveCommand(m_fieldX, m_fieldY, m_rotate);
-    drivebase.setDefaultCommand(
-      !RobotBase.isSimulation() 
-        ? driveFieldOrientedAngularVelocity //driveFieldOrientedDirectAngle or driveFieldOrientedAngularVelocity
-        : driveFieldOrientedDirectAngleSim
-    );
+    public RobotContainer() {
+        final InputAxis m_fieldX = new InputAxis("Forward", dj::getLeftY)
+            .withDeadband(OIConstants.kMinDeadband)
+            .withInvert(true)
+            .withSquaring(true);
+        final InputAxis m_fieldY = new InputAxis("Strafe", dj::getLeftX)
+            .withDeadband(OIConstants.kMinDeadband)
+            .withInvert(true)
+            .withSquaring(true);
+        final InputAxis m_rotate = new InputAxis("Rotate", dj::getRightX)
+            .withDeadband(OIConstants.kMinDeadband)
+            .withInvert(true);
+        final InputAxis m_angleX = new InputAxis("Angle X", dj::getRightX);
+        final InputAxis m_angleY = new InputAxis("Angle Y", dj::getRightY);
 
-  }
+        configureBindings();
 
-  private void configureBindings() {
-    dj.frame().onTrue((Commands.runOnce(drivebase::zeroGyro)));
-    dj.stadia().onTrue(Commands.runOnce(drivebase::addFakeVisionReading));
+        drivetrain.setDefaultCommand(
+            // Drivetrain will execute this command periodically
+            drivetrain.applyRequest(() ->
+                drive.withVelocityX(m_fieldX.getAsDouble() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(m_fieldY.getAsDouble() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(m_rotate.getAsDouble() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            )
+        );
+    }
 
-    //hold B to drive to a given pose
-    dj.b().whileTrue(
-      Commands.deferredProxy(() -> drivebase.driveToPose(
-        new Pose2d(new Translation2d(4,4), Rotation2d.fromDegrees(0)))
-      )
-    );
-  }
+    private void configureBindings() {
+        // dj.frame().onTrue((Commands.runOnce(drivetrain::zeroGyro)));
+        // dj.stadia().onTrue(Commands.runOnce(drivetrain::addFakeVisionReading));
 
-  public Command getAutonomousCommand() {
-    // return Commands.print("No autonomous command configured");
-    return drivebase.getAutonomousCommand("New Auto");
-  }
+        //hold A to apply brake
+        dj.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        //hold B to point the wheels forward
+        dj.b().whileTrue(drivetrain.applyRequest(() ->
+            point.withModuleDirection(new Rotation2d(-dj.getLeftY(),-dj.getLeftX()))
+        ));
 
-  public void setDriveMode() {
-    //drivebase.setDefaultCommand();
-  }
+        // Run SysId routines when holding ellipses/google and X/Y.
+        // Note that each routine should be run exactly once in a single log.
+        dj.ellipses().and(dj.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+        dj.ellipses().and(dj.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+        dj.google().and(dj.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+        dj.google().and(dj.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-  public void setMotorBrake(boolean brake) {
-    drivebase.setMotorBrake(brake);
-  }
+        // reset the field-centric heading on frame button press
+        dj.frame().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+
+        drivetrain.registerTelemetry(logger::telemeterize);
+    }
+
+    public Command getAutonomousCommand() {
+        return Commands.print("No autonomous command configured");
+        // return drivetrain.getAutonomousCommand("New Auto");
+    }
 }

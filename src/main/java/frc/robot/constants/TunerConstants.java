@@ -27,13 +27,13 @@ public class TunerConstants {
     // The steer motor uses any SwerveModule.SteerRequestType control request with the
     // output type specified by SwerveModuleConstants.SteerMotorClosedLoopOutput
     private static final Slot0Configs steerGains = new Slot0Configs()
-        .withKP(100).withKI(0).withKD(2.0)
-        .withKS(0.2).withKV(1.5).withKA(0);
+        .withKP(SwerveConstants.steer.kP).withKI(SwerveConstants.steer.kI).withKD(SwerveConstants.steer.kD)
+        .withKS(SwerveConstants.steer.kS).withKV(SwerveConstants.steer.kV).withKA(SwerveConstants.steer.kA);
     // When using closed-loop control, the drive motor uses the control
     // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
     private static final Slot0Configs driveGains = new Slot0Configs()
-        .withKP(0.1).withKI(0).withKD(0)
-        .withKS(0).withKV(0.12);
+        .withKP(SwerveConstants.drive.kP).withKI(SwerveConstants.drive.kI).withKD(SwerveConstants.drive.kD)
+        .withKS(SwerveConstants.drive.kS).withKV(SwerveConstants.drive.kV);
 
     // The closed-loop output type to use for the steer motors;
     // This affects the PID/FF gains for the steer motors
@@ -48,7 +48,7 @@ public class TunerConstants {
 
     // The stator current at which the wheels start to slip;
     // This needs to be tuned to your individual robot
-    private static final Current kSlipCurrent = Amps.of(120.0);
+    private static final Current kSlipCurrent = Amps.of(SwerveConstants.drive.kSlipCurrent);
 
     // Initial configs for the drive and steer motors and the CANcoder; these cannot be null.
     // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
@@ -58,9 +58,11 @@ public class TunerConstants {
             new CurrentLimitsConfigs()
                 // Swerve azimuth does not require much torque output, so we can set a relatively low
                 // stator current limit to help avoid brownouts without impacting performance.
-                .withStatorCurrentLimit(Amps.of(60))
+                .withStatorCurrentLimit(Amps.of(SwerveConstants.steer.kStatorCurrentLimit))
                 .withStatorCurrentLimitEnable(true)
         );
+
+    // NCSwerve Mk7 has the encoder inverted from the azimuth so we need to adjust the initial configs
     private static final CANcoderConfiguration cancoderInitialConfigs = new CANcoderConfiguration()
         .withMagnetSensor(
             new MagnetSensorConfigs()
@@ -71,20 +73,20 @@ public class TunerConstants {
 
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
-    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(10.64);
+    public static final LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(SwerveConstants.kMaxSpeedMetersPerSecond);
 
     // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
     // This may need to be tuned to your individual robot
     private static final double kCoupleRatio = 0;
 
-    private static final double kDriveGearRatio = 6;
-    private static final double kSteerGearRatio = 10.3846154;
-    private static final Distance kWheelRadius = Inches.of(4);
+    private static final double kDriveGearRatio = SwerveConstants.drive.kGearRatio;
+    private static final double kSteerGearRatio = SwerveConstants.steer.kGearRatio;
+    private static final Distance kWheelRadius = Inches.of(SwerveConstants.kWheelDiamInches);
 
     private static final boolean kInvertLeftSide = false;
     private static final boolean kInvertRightSide = true;
 
-    private static final CANBus kCANBus = new CANBus("drivetrain", "./logs/example.hoot");
+    private static final CANBus kCANBus = new CANBus(SwerveConstants.kCANbus, "./logs/example.hoot");
     private static final int kPigeonId = 0;
 
 
@@ -122,44 +124,40 @@ public class TunerConstants {
 
 
     // Front Left
-    private static final int kFrontLeftDriveMotorId = 7;
-    private static final int kFrontLeftSteerMotorId = 3;
-    private static final int kFrontLeftEncoderId = 3;
-    private static final Angle kFrontLeftEncoderOffset = Rotations.of(0.176513671875);
-    private static final boolean kFrontLeftSteerMotorInverted = true;
-
-    private static final Distance kFrontLeftXPos = Inches.of(11.5);
-    private static final Distance kFrontLeftYPos = Inches.of(11.5);
+    private static final int kFrontLeftDriveMotorId = SwerveConstants.modules.FrontLeft.kDriveMotorId;
+    private static final int kFrontLeftSteerMotorId = SwerveConstants.modules.FrontLeft.kSteerMotorId;
+    private static final int kFrontLeftEncoderId = SwerveConstants.modules.FrontLeft.kEncoderId;
+    private static final Angle kFrontLeftEncoderOffset = SwerveConstants.modules.FrontLeft.kEncoderOffset;
+    private static final boolean kFrontLeftSteerMotorInverted = SwerveConstants.modules.FrontLeft.kSteerMotorInverted;
+    private static final Distance kFrontLeftXPos = SwerveConstants.modules.FrontLeft.kXPos;
+    private static final Distance kFrontLeftYPos = SwerveConstants.modules.FrontLeft.kYPos;
 
     // Front Right
-    private static final int kFrontRightDriveMotorId = 8;
-    private static final int kFrontRightSteerMotorId = 4;
-    private static final int kFrontRightEncoderId = 4;
-    private static final Angle kFrontRightEncoderOffset = Rotations.of(0.02783203125);
-    private static final boolean kFrontRightSteerMotorInverted = true;
-
-    private static final Distance kFrontRightXPos = Inches.of(11.5);
-    private static final Distance kFrontRightYPos = Inches.of(-11.5);
+    private static final int kFrontRightDriveMotorId = SwerveConstants.modules.FrontRight.kDriveMotorId;
+    private static final int kFrontRightSteerMotorId = SwerveConstants.modules.FrontRight.kSteerMotorId;
+    private static final int kFrontRightEncoderId = SwerveConstants.modules.FrontRight.kEncoderId;
+    private static final Angle kFrontRightEncoderOffset = SwerveConstants.modules.FrontRight.kEncoderOffset;
+    private static final boolean kFrontRightSteerMotorInverted = SwerveConstants.modules.FrontRight.kSteerMotorInverted;
+    private static final Distance kFrontRightXPos = SwerveConstants.modules.FrontRight.kXPos;
+    private static final Distance kFrontRightYPos = SwerveConstants.modules.FrontRight.kYPos;
 
     // Back Left
-    private static final int kBackLeftDriveMotorId = 6;
-    private static final int kBackLeftSteerMotorId = 2;
-    private static final int kBackLeftEncoderId = 2;
-    private static final Angle kBackLeftEncoderOffset = Rotations.of(-0.241943359375);
-    private static final boolean kBackLeftSteerMotorInverted = true;
-
-    private static final Distance kBackLeftXPos = Inches.of(-11.5);
-    private static final Distance kBackLeftYPos = Inches.of(11.5);
+    private static final int kBackLeftDriveMotorId = SwerveConstants.modules.BackLeft.kDriveMotorId;
+    private static final int kBackLeftSteerMotorId = SwerveConstants.modules.BackLeft.kSteerMotorId;
+    private static final int kBackLeftEncoderId = SwerveConstants.modules.BackLeft.kEncoderId;
+    private static final Angle kBackLeftEncoderOffset = SwerveConstants.modules.BackLeft.kEncoderOffset;
+    private static final boolean kBackLeftSteerMotorInverted = SwerveConstants.modules.BackLeft.kSteerMotorInverted;
+    private static final Distance kBackLeftXPos = SwerveConstants.modules.BackLeft.kXPos;
+    private static final Distance kBackLeftYPos = SwerveConstants.modules.BackLeft.kYPos;
 
     // Back Right
-    private static final int kBackRightDriveMotorId = 5;
-    private static final int kBackRightSteerMotorId = 1;
-    private static final int kBackRightEncoderId = 1;
-    private static final Angle kBackRightEncoderOffset = Rotations.of(0.4580078125);
-    private static final boolean kBackRightSteerMotorInverted = true;
-
-    private static final Distance kBackRightXPos = Inches.of(-11.5);
-    private static final Distance kBackRightYPos = Inches.of(-11.5);
+    private static final int kBackRightDriveMotorId = SwerveConstants.modules.BackRight.kDriveMotorId;
+    private static final int kBackRightSteerMotorId = SwerveConstants.modules.BackRight.kSteerMotorId;
+    private static final int kBackRightEncoderId = SwerveConstants.modules.BackRight.kEncoderId;
+    private static final Angle kBackRightEncoderOffset = SwerveConstants.modules.BackRight.kEncoderOffset;
+    private static final boolean kBackRightSteerMotorInverted = SwerveConstants.modules.BackRight.kSteerMotorInverted;
+    private static final Distance kBackRightXPos = SwerveConstants.modules.BackRight.kXPos;
+    private static final Distance kBackRightYPos = SwerveConstants.modules.BackRight.kYPos;
 
 
     public static final SwerveModuleConstants FrontLeft = ConstantCreator.createModuleConstants(
